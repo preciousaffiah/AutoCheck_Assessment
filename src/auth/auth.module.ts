@@ -6,14 +6,12 @@ import { AuthGuard } from '../shared/guards/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from 'src/database/database.module';
 import { ConfigModule } from '@nestjs/config';
-import { EmployeesModule } from 'src/vehicles/vehicles.module';
 import { APIResponse } from 'src/shared/response';
 
 @Module({
   imports: [
     DatabaseModule,
     ConfigModule,
-    EmployeesModule, //check
     JwtModule.register({
       global: true,
       secret: 'secret',
@@ -22,7 +20,6 @@ import { APIResponse } from 'src/shared/response';
   ],
   providers: [
     AuthService,
-    EmployeesModule,
     APIResponse,
     {
       provide: APP_GUARD,

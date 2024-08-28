@@ -11,7 +11,7 @@ export class DatabaseService {
         host: 'localhost',
         port: 3306,
         user: 'root', // Replace with your MySQL username
-        database: 'employee', // Replace with your database name
+        database: 'auto_check', // Replace with your database name
     });
 // DATABASE_URL= mysql://root@localhost:3306/digiyo_dev
     this.connection.connect((err) => {
