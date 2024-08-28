@@ -6,9 +6,11 @@ import { AuthGuard } from 'src/shared/guards/auth.guard';
 import { APIResponse } from 'src/shared/response';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
+import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from 'src/database/database.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Vehicle])],
+  imports: [DatabaseModule, ConfigModule, TypeOrmModule.forFeature([Vehicle])],
   controllers: [VehicleController],
   providers: [
     VehicleService,

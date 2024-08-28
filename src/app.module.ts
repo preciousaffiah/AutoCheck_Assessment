@@ -11,8 +11,6 @@ import { LoanModule } from './loan/loans.module';
 
 @Module({
   imports: [
-    DatabaseModule,
-    ConfigModule, 
     VehicleModule,
     LoanModule,
     AuthModule,
