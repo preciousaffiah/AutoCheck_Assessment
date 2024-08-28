@@ -4,13 +4,13 @@ import { VehicleController } from './vehicles.controller';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from 'src/shared/guards/auth.guard';
 import { APIResponse } from 'src/shared/response';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { ConfigModule } from '@nestjs/config';
-import { DatabaseModule } from 'src/database/database.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+
 
 @Module({
-  imports: [DatabaseModule, ConfigModule, TypeOrmModule.forFeature([Vehicle])],
+  imports: [ConfigModule, TypeOrmModule.forFeature([Vehicle])],
   controllers: [VehicleController],
   providers: [
     VehicleService,
