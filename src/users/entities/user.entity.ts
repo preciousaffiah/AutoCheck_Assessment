@@ -5,9 +5,10 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from "typeorm";
+import { UserRoleEnum } from "../enums/UserEnum";
 
 @Entity()
-export class User {
+export class UserEntity {
     @PrimaryGeneratedColumn()
     id: string;
 
@@ -30,7 +31,7 @@ export class User {
     BVN: string;
 
     @Column({ nullable: false })
-    role: string; //TODO://enum //default REGULAR 
+    role: UserRoleEnum;
 
     @CreateDateColumn({ name: "created_at" })
     createdAt: Date;

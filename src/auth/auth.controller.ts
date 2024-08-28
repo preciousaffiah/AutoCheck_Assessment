@@ -6,48 +6,51 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { CreateUserDto, LoginDto } from './dto/user.dto';
 import { AuthService } from './auth.service';
 import { Public } from 'src/shared/decorator/public.decorator';
-import { APIResponse } from 'src/shared/response';
+// import { APIResponse } from 'src/shared/response';
 import { Response } from 'express';
 
-@Controller('employees')
+@Controller('auth')
 export class AuthController {
+  private logger: Logger
   constructor(
     private readonly authService: AuthService,
-    private readonly APIResponse: APIResponse,
-  ) {}
+    // private readonly APIResponse: APIResponse,
+  ) {
+    this.logger = new Logger(AuthController.name);
+  }
 
   @Public()
   @HttpCode(HttpStatus.CREATED)
   @Post('register')
-  async register(@Body(ValidationPipe) userData: CreateUserDto, @Res() res: Response) {
+  async register(@Body() userData: CreateUserDto, @Res() res: Response) {
     try {
       const result = await this.authService.create(userData);
-      return this.APIResponse.success(
-        HttpStatus.OK,
-        result,
-        'Registration successful',
-      );
+      return result;
     } catch (error) {
-      return this.APIResponse.error(error, res);
+      this.logger.error('Error registering user:', error);
+      throw new InternalServerErrorException('Error registering user');
     }
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body(ValidationPipe) employeeData: LoginDto, @Res() res: Response) {
+  async login(@Body() employeeData: LoginDto, @Res() res: Response) {
     try {
       const result = await this.authService.login(
         employeeData.email,
         employeeData.password,
       );
-      return this.APIResponse.success(HttpStatus.OK, res, result, 'Login successful');
+      return result;
     } catch (error) {
-      return this.APIResponse.error(error, res);
+      this.logger.error('Error logging in:', error);
+      throw new InternalServerErrorException('Error logging in');
     }
   }
 }

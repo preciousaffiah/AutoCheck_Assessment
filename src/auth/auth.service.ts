@@ -2,6 +2,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
 import { Connection } from "mysql2";
@@ -20,47 +21,58 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService
-  ) {}
+  ) { }
 
   async create(userData: any): Promise<any> {
     try {
-      const emailExists = await this.userRepository.findOne({
-        where: { email: userData.email },
-      });
 
-      if (emailExists) {
-        throw new ConflictException("User already exists");
-      }
+      console.log(userData)
 
-      const bvnExists = await this.userRepository.findOne({
-        where: { BVN: userData.bvn },
-      });
+      // const emailExists = await this.userRepository.findOne({
+      //   where: { email: userData.email },
+      // });
 
-      if (bvnExists) {
-        throw new ConflictException("BVN already in use");
-      }
+      // if (emailExists) {
+      //   throw new ConflictException("User already exists");
+      // }
+
+      // const bvnExists = await this.userRepository.findOne({
+      //   where: { BVN: userData.BVN },
+      // });
+
+      // if (bvnExists) {
+      //   throw new ConflictException("BVN already in use");
+      // }
+
+      console.log('userData', userData)
 
       // Destructure password from userData and hash it separately
       const { password } = userData;
+      
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+
+    
 
       // Create a new user instance with hashed password
       const newUser = this.userRepository.create({
         ...userData,
         password: hashedPassword,
       });
+    
 
       // Save the new user to the database
-      const user = await this.userRepository.save(newUser);
+      return this.userRepository.save(newUser);
+
+      
 
       //jwt token
       // const access_token = await this.jwtService.signAsync({
       //   user_id: user.id,
       //   role: user.role,
       // });
-      return user;
+      
       // return { access_token, user: user };
     } catch (error) {
       this.APIResponse.ExceptionError(error);
@@ -101,7 +113,7 @@ export class AuthService {
 
       return { access_token, user: loggedInuser };
     } catch (error) {
-      this.APIResponse.ExceptionError(error);
+      throw new InternalServerErrorException(error);
     }
   }
 }

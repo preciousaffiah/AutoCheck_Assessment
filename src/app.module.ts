@@ -30,10 +30,10 @@ import { UsersModule } from './users/users.module';
       ],
       synchronize: true,
     }),
-    VehicleModule,
-    LoanModule,
     AuthModule,
+    VehicleModule,
     UsersModule,
+    LoanModule,
   ],
   controllers: [AppController],
   providers: [AppService, {
