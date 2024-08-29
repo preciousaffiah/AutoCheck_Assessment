@@ -1,20 +1,24 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthController } from './auth.controller';
 import { AuthGuard } from '../shared/guards/auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { APIResponse } from 'src/shared/response';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { AuthService } from './auth.service';
-import { AdminModule } from 'src/admin/admin.module';
+import { Admin } from './entities/admin.entity';
+import { AdminController } from './admin.controller';
+import { AdminService } from './admin.service';
+import { Loan } from 'src/loan/entities/loan.entity';
+import { LoanModule } from 'src/loan/loans.module';
+import { VehicleModule } from 'src/vehicles/vehicles.module';
+import { SeederService } from './seeder.service';
 
 @Module({
   imports: [
     ConfigModule,
-    AdminModule,
-    TypeOrmModule.forFeature([User]),
+    LoanModule,
+    VehicleModule,
+    TypeOrmModule.forFeature([Admin, Loan]),
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'your_secret_key',  // Use your secret key
@@ -22,14 +26,15 @@ import { AdminModule } from 'src/admin/admin.module';
     }),
   ],
   providers: [
-    AuthService,
+    AdminService,
+    SeederService,
     APIResponse,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
     },
   ],
-  controllers: [AuthController],
-  exports: [AuthService],
+  controllers: [AdminController],
+  exports: [AdminService],
 })
-export class AuthModule { }
+export class AdminModule { }

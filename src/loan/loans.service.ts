@@ -1,64 +1,95 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Loan } from "./entities/loan.entity";
-import { Repository } from "typeorm";
-import { APIResponse } from "src/shared/response";
+import { ConflictException, HttpException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Loan } from './entities/loan.entity';
+import { Repository } from 'typeorm';
+import { APIResponse } from 'src/shared/response';
+import { RegisterLoanDto } from './dto/loan';
+import { LoanStatus } from 'src/enums/role';
 
-// TODO: rewrite comments
 
 @Injectable()
 export class LoanService {
+  private logger: Logger;
+
   constructor(
     @InjectRepository(Loan)
     private readonly LoanRepository: Repository<Loan>,
-    private readonly APIResponse: APIResponse
-  ) {}
-
-  /**
-   * Create a new Loan.
-   * @param LoanData - The data of the Loan to create.
-   * @returns A Promise that resolves to the created Loan entity.
-   * @throws ConflictException if there's an error saving the Loan.
-   */
-  async create(LoanData: any): Promise<any> {
-    // Create a new Loan instance
-    const newLoan = this.LoanRepository.create(LoanData);
-
-    try {
-      // Save the new Loan to the database
-      let t = await this.LoanRepository.save(newLoan);
-    } catch (error) {
-      this.APIResponse.ExceptionError(error);
-    }
-
-    return newLoan;
+  ) {
+    this.logger = new Logger(LoanService.name);
   }
 
-  /**
-   * Find all Loans with pagination.
-   * @param limit - The maximum number of Loans to retrieve.
-   * @param offset - The number of Loans to skip.
-   * @returns A Promise that resolves to an array of Loan entities.
-   */
+  async create(LoanData: RegisterLoanDto, user_id: string): Promise<Loan> {
+    try {
+      
+      const existingLoan = await this.LoanRepository.findOne({
+        where: {
+          user_id,
+          status: LoanStatus.APPROVED,
+          paid: false,
+        },
+      });
+
+      if (existingLoan) {
+        throw new ConflictException(
+          'Pay outstnding debt before taking another loan',
+        );
+      }
+
+      // Create a new Loan instance
+      const newLoan = this.LoanRepository.create({...LoanData, user_id});
+
+      // Save the new Loan to the database
+      let t = await this.LoanRepository.save(newLoan);
+
+      return newLoan;
+
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not request loan'); // Catch unexpected errors
+    }
+  }
+
   async findAll(limit: number, offset: number): Promise<Loan[]> {
     try {
+      offset = (offset - 1) * limit;
+
       const Loans = await this.LoanRepository.find({
         skip: offset,
         take: limit,
       });
       return Loans;
     } catch (error) {
-      // Handle the error appropriately
-      this.APIResponse.ExceptionError(error);
+      this.logger.error(error.message, error.stack);
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not fetch loans'); // Catch unexpected errors
     }
   }
 
-  /**
-   * Find a Loan by their email.
-   * @param email - The email of the Loan to find.
-   * @returns A Promise that resolves to the found Loan entity.
-   * @throws NotFoundException if the Loan with the given email is not found.
-   */
+  async findUserLoanById(id: string, user_id: string): Promise<Loan> {
+    try {
+      const Loan = await this.LoanRepository.findOne({
+        where: { id, user_id },
+      });
+
+      if (!Loan) {
+        throw new NotFoundException('Loan not found');
+      }
+
+      return Loan;
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not fetch loan'); // Catch unexpected errors
+    }
+  }
+
   async findById(id: string): Promise<Loan> {
     try {
       const Loan = await this.LoanRepository.findOne({
@@ -66,14 +97,37 @@ export class LoanService {
       });
 
       if (!Loan) {
-        throw new NotFoundException("Loan not found");
+        throw new NotFoundException('Loan not found');
       }
 
       return Loan;
     } catch (error) {
-      // Handle the error appropriately
-      this.APIResponse.ExceptionError(error);
+      this.logger.error(error.message, error.stack);
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not fetch loan'); // Catch unexpected errors
     }
   }
-  
+
+  async findByUserId(user_id: string, limit: number, offset: number): Promise<Loan[]> {
+    try {
+      offset = (offset - 1) * limit;
+
+      const Loans = await this.LoanRepository.find({
+        where:{
+          user_id
+        },
+        skip: offset,
+        take: limit,
+      });
+      return Loans;
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not fetch users loans'); // Catch unexpected errors
+    }
+  }
 }

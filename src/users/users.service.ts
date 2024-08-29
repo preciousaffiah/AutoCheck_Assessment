@@ -1,26 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
+import { User } from 'src/auth/entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  private logger: Logger;
+
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {
+    this.logger = new Logger(UsersService.name);
   }
 
-  findAll() {
-    return `This action returns all users`;
-  }
+  async findAll(limit: number, offset: number): Promise<User[]> {
+    try {
+      offset = (offset - 1) * limit;
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+      const users = await this.userRepository.find({
+        skip: offset,
+        take: limit,
+      });
+      return users;
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not get users'); // Catch unexpected errors
+    }
   }
 }

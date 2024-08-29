@@ -15,16 +15,31 @@ export class Vehicle {
   vin: string;
 
   @Column({ nullable: false })
-  make: string;
-
-  @Column({ nullable: false })
   model: string;
 
   @Column({ nullable: false })
-  year: string;
+  country: string;
 
   @Column({ nullable: false })
-  mileage: string;
+  manufacturer: string;
+
+  @Column({ nullable: false })
+  class: string;
+
+  @Column({ nullable: false })
+  region: string;
+
+  @Column({ nullable: false })
+  wmi: string;
+
+  @Column({ nullable: false })
+  vds: string;
+
+  @Column({ nullable: false })
+  vis: string;
+
+  @Column({ nullable: false })
+  year: number;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;

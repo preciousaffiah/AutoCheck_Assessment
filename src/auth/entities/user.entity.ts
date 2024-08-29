@@ -1,3 +1,4 @@
+import { Role } from "src/enums/role";
 import {
   Entity,
   Column,
@@ -29,8 +30,8 @@ export class User {
   @Column({ nullable: false, unique: true })
   BVN: string;
 
-  @Column({ nullable: false })
-  role: string; //TODO://enum //default REGULAR 
+  @Column({ nullable: false, default: Role.REGULAR })
+  role: Role;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;

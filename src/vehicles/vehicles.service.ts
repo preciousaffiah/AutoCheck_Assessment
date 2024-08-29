@@ -1,70 +1,106 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Vehicle } from "./entities/vehicle.entity";
-import { Repository } from "typeorm";
-import { APIResponse } from "src/shared/response";
-
-// TODO: rewrite comments
+import {
+  BadRequestException,
+  ConflictException,
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Vehicle } from './entities/vehicle.entity';
+import { Repository } from 'typeorm';
+import { RegisterVehicleDto } from './dto/vehicle';
+import axios, { AxiosResponse } from 'axios';
 
 @Injectable()
 export class VehicleService {
+  private logger: Logger;
+
+  private readonly apiKey = process.env.VINAPIKEY;
+  private readonly baseUrl = process.env.VINURL;
   constructor(
     @InjectRepository(Vehicle)
     private readonly VehicleRepository: Repository<Vehicle>,
-    private readonly APIResponse: APIResponse
-  ) {}
-
-  /**
-   * Create a new Vehicle.
-   * @param VehicleData - The data of the Vehicle to create.
-   * @returns A Promise that resolves to the created Vehicle entity.
-   * @throws ConflictException if there's an error saving the Vehicle.
-   */
-  async create(VehicleData: any): Promise<any> {
-    // Create a new Vehicle instance
-    const newVehicle = this.VehicleRepository.create(VehicleData);
-
-    try {
-      // Save the new Vehicle to the database
-      await this.VehicleRepository.save(newVehicle);
-    } catch (error) {
-      this.APIResponse.ExceptionError(error);
-    }
-
-    return newVehicle;
+  ) {
+    this.logger = new Logger(VehicleService.name);
   }
 
-  /**
-   * Find all Vehicles with pagination.
-   * @param limit - The maximum number of Vehicles to retrieve.
-   * @param offset - The number of Vehicles to skip.
-   * @returns A Promise that resolves to an array of Vehicle entities.
-   */
+  async create(VehicleData: RegisterVehicleDto): Promise<any> {
+    try {
+      VehicleData.vin = VehicleData.vin.toUpperCase();
+
+      const vehicleExists = await this.VehicleRepository.findOne({
+        where: { vin: VehicleData.vin },
+      });
+
+      if (vehicleExists) {
+        throw new ConflictException('Vehicle already exists');
+      }
+
+      const response: AxiosResponse = await axios.get(
+        `${this.baseUrl}?vin=${VehicleData.vin}`,
+        {
+          headers: {
+            'X-Api-Key': this.apiKey,
+          },
+        },
+      );
+
+      // Create a new Vehicle instance
+      const newVehicle = this.VehicleRepository.create(response.data);
+
+      // Save the new Vehicle to the database
+      await this.VehicleRepository.save(newVehicle);
+
+      return newVehicle;
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+
+      if (error.response) {
+        throw new HttpException(
+          {
+            statusCode: error.response.status,
+            message: error.response.data,
+            error: true,
+          },
+          error.response.status,
+        );
+      } else {
+        throw new InternalServerErrorException('Could not register vehicle'); // Catch unexpected errors
+      }
+    }
+  }
+
   async findAll(limit: number, offset: number): Promise<Vehicle[]> {
     try {
+      offset = (offset - 1) * limit;
+
       const Vehicles = await this.VehicleRepository.find({
         skip: offset,
         take: limit,
       });
       return Vehicles;
     } catch (error) {
-      // Handle the error appropriately
-      this.APIResponse.ExceptionError(error);
+      this.logger.error(error.message, error.stack);
+
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not register vehicle'); // Catch unexpected errors
     }
   }
 
-  /**
-   * Find a Vehicle by their ID.
-   * @param id - The ID of the Vehicle to find.
-   * @returns A Promise that resolves to the found Vehicle entity.
-   * @throws NotFoundException if the Vehicle with the given ID is not found.
-   */
   async findByIdOrVin(id: string, vin: string): Promise<Vehicle> {
     try {
       let Vehicle;
 
-      if(!id && !vin){
-        throw new BadRequestException("Either vin or id must be provided");
+      if (!id && !vin) {
+        throw new BadRequestException('Either vin or id must be provided');
       }
 
       if (id) {
@@ -80,21 +116,19 @@ export class VehicleService {
       }
 
       if (!Vehicle) {
-        throw new NotFoundException("Vehicle not found");
+        throw new NotFoundException('Vehicle not found');
       }
       return Vehicle;
     } catch (error) {
-      // Handle the error appropriately
-      this.APIResponse.ExceptionError(error);
+      this.logger.error(error.message, error.stack);
+
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not register vehicle'); // Catch unexpected errors
     }
   }
 
-  /**
-   * Find a Vehicle by their email.
-   * @param email - The email of the Vehicle to find.
-   * @returns A Promise that resolves to the found Vehicle entity.
-   * @throws NotFoundException if the Vehicle with the given email is not found.
-   */
   async findByVin(vin: string): Promise<Vehicle> {
     try {
       const Vehicle = await this.VehicleRepository.findOne({
@@ -102,13 +136,17 @@ export class VehicleService {
       });
 
       if (!Vehicle) {
-        throw new NotFoundException("Vehicle not found");
+        throw new NotFoundException('Vehicle not found');
       }
 
       return Vehicle;
     } catch (error) {
-      // Handle the error appropriately
-      this.APIResponse.ExceptionError(error);
+      this.logger.error(error.message, error.stack);
+
+      if (error instanceof HttpException) {
+        throw error; // Rethrow expected errors
+      }
+      throw new InternalServerErrorException('Could not register vehicle'); // Catch unexpected errors
     }
   }
 }

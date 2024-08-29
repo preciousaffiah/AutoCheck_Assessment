@@ -8,13 +8,14 @@ import {
   Post,
   Body,
   ValidationPipe,
+  Request,
 } from '@nestjs/common';
 import { LoanService } from './loans.service';
 import { APIResponse } from 'src/shared/response';
 import { Response } from 'express';
 import { RegisterLoanDto } from './dto/loan';
 
-@Controller('vehicle')
+@Controller('loan')
 export class LoanController {
   constructor(
     private readonly loanService: LoanService,
@@ -22,39 +23,44 @@ export class LoanController {
   ) {}
 
   @HttpCode(HttpStatus.CREATED)
-  @Post('register') 
-  async register(@Body(ValidationPipe) loanData: RegisterLoanDto, @Res() res: Response) {
-    try { //pass user_id to service
-      const result = await this.loanService.create(loanData);
-      return this.APIResponse.success(
-        HttpStatus.OK,
-        result,
-        'Registration successful',
-      );
-    } catch (error) {
-      return this.APIResponse.error(error, res);
-    }
-  }
-
-  @HttpCode(HttpStatus.OK)
-  @Get()
-  async findAll(@Query('offset') offset: number = 1, @Res() res: Response) {
-    try {
-      const result = await this.loanService.findAll(10, offset);
-      return this.APIResponse.success(HttpStatus.OK, res, result, '');
-    } catch (error) {
-      return this.APIResponse.error(error, res);
-    }
+  @Post('request')
+  async register(
+    @Body(ValidationPipe) loanData: RegisterLoanDto,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    const result = await this.loanService.create(loanData, req.user.user_id);
+    return this.APIResponse.success(
+      HttpStatus.CREATED,
+      res,
+      result,
+      'Loan request successful',
+    );
   }
 
   @HttpCode(HttpStatus.OK)
   @Get(':id')
-  async findById(@Query('id') id: string, @Res() res: Response) {
-    try {
-      const result = await this.loanService.findById(id);
-      return this.APIResponse.success(HttpStatus.OK, res, result, '');
-    } catch (error) {
-      return this.APIResponse.error(error, res);
-    }
+  async findById(
+    @Query('id') id: string,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    const result = await this.loanService.findUserLoanById(id, req.user.user_id);
+    return this.APIResponse.success(HttpStatus.OK, res, result, '');
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('/user/history')
+  async findByUserId(
+    @Query('offset') offset: number = 1,
+    @Request() req,
+    @Res() res: Response,
+  ) {
+    const result = await this.loanService.findByUserId(
+      req.user.user_id,
+      10,
+      offset,
+    );
+    return this.APIResponse.success(HttpStatus.OK, res, result, 'Loan history');
   }
 }

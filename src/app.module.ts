@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { VehicleModule } from './vehicles/vehicles.module';
@@ -9,6 +9,8 @@ import { ConfigModule } from '@nestjs/config';
 import { LoanModule } from './loan/loans.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
+import { AdminModule } from './admin/admin.module';
+import { SeederService } from './admin/seeder.service';
 
 @Module({
   imports: [
@@ -33,12 +35,20 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     VehicleModule,
     UsersModule,
+    AdminModule,
     LoanModule,
   ],
   controllers: [AppController],
-  providers: [AppService, {
+  providers: [AppService, SeederService, {
     provide: APP_GUARD,
     useClass: ThrottlerGuard,
   }],
 })
-export class AppModule { }
+// export class AppModule { }
+export class AppModule implements OnModuleInit {
+  constructor(private readonly seederService: SeederService) {}
+
+  async onModuleInit() {
+    await this.seederService.seedAdminUser();
+  }
+}

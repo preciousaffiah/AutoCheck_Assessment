@@ -50,5 +50,7 @@ export class RolesGuard implements CanActivate {
         HttpStatus.UNAUTHORIZED,
       );
     }
+    return true;
+
   }
 }

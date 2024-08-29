@@ -1,4 +1,4 @@
-import { LoanStatus } from "src/enums/role";
+import { Role } from "src/enums/role";
 import {
   Entity,
   Column,
@@ -8,24 +8,24 @@ import {
 } from "typeorm";
 
 @Entity()
-export class Loan {
+export class Admin {
   @PrimaryGeneratedColumn()
   id: string;
 
-  @Column({ nullable: false }) //TODO: connect to user entity
-  user_id: string;
+  @Column({ nullable: false })
+  fname: string;
 
   @Column({ nullable: false })
-  amount: string;
+  lname: string;
 
-  @Column({ nullable: false, default: LoanStatus.PENDING })
-  status: LoanStatus;
-
-  @Column({ nullable: false , default: false})
-  paid: boolean;
+  @Column({ nullable: false, unique: true })
+  email: string;
 
   @Column({ nullable: false })
-  due_date: Date;
+  password: string;
+
+  @Column({ nullable: false, default: Role.ADMIN })
+  role: Role;
 
   @CreateDateColumn({ name: "created_at" })
   createdAt: Date;

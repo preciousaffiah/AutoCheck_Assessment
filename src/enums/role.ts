@@ -1,5 +1,10 @@
 export enum Role {
-    ENGINEER = "ENGINEER",
-    INTERN = "INTERN",
-    ADMIN = "ADMIN",
-  }
+  REGULAR = 'REGULAR',
+  ADMIN = 'ADMIN',
+}
+
+export enum LoanStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DECLINED = 'DECLINED',
+}
