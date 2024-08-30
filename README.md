@@ -48,6 +48,8 @@ Update the values with yours.
 5. Start the application:
     ```bash
     npm run start
+    
+6. On start of the application: Admin data will be seeded automatically
 
 
 ## API Documentation
@@ -67,8 +69,10 @@ Update the values with yours.
 7. Endpoints that require `auth_token` will be automatically set via a script that will be ran when the either login or register
    
 8. The postman requests have already been populated with placeholder data
+   
+10. Admin login details have already been placed in the postman request body. incase you don't find it, please check adminSeed service for details
     
-9. Go ahead and make other requests!
+11. Go ahead and make other requests!
 
 
 
